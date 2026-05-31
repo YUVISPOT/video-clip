@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  projects  Project[]
+}
+
+model Project {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id])
+  clips       Clip[]
+  timelines   Timeline[]
+  exportJobs  ExportJob[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Clip {
+  id            String         @id @default(uuid())
+  projectId     String?
+  project       Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  filename      String
+  originalName  String
+  filePath      String
+  duration      Float
+  width         Int
+  height        Int
+  fps           Float
+  codec         String
+  fileSize      Int
+  thumbnailPath String?
+  waveformPath  String?
+  hasAudio      Boolean        @default(true)
+  status        String         @default("ready")
+  createdAt     DateTime       @default(now())
+  timelineItems TimelineItem[]
+  renders       Render[]
+}
+
+model Timeline {
+  id         String         @id @default(uuid())
+  projectId  String
+  project    Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name       String         @default("Main Timeline")
+  items      TimelineItem[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+}
+
+model TimelineItem {
+  id          String   @id @default(uuid())
+  timelineId  String
+  timeline    Timeline @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+  clipId      String
+  clip        Clip     @relation(fields: [clipId], references: [id])
+  position    Float
+  startTime   Float
+  endTime     Float
+  trackIndex  Int      @default(0)
+  volume      Float    @default(1.0)
+  playbackRate Float   @default(1.0)
+  cropX       Float?
+  cropY       Float?
+  cropW       Float?
+  cropH       Float?
+  zoomFactor  Float    @default(1.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Render {
+  id           String   @id @default(uuid())
+  clipId       String
+  clip         Clip     @relation(fields: [clipId], references: [id])
+  outputPath   String?
+  startTime    Float
+  endTime      Float
+  width        Int?
+  height       Int?
+  fps          Float?
+  preset       String?
+  status       String   @default("pending")
+  progress     Float    @default(0)
+  errorMessage String?
+  filePath     String?
+  fileSize     Int?
+  duration     Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ExportJob {
+  id            String   @id @default(uuid())
+  projectId     String?
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  type          String
+  status        String   @default("pending")
+  progress      Float    @default(0)
+  inputClips    String
+  outputPath    String?
+  outputFormat  String   @default("mp4")
+  aspectRatio   String   @default("16:9")
+  resolution    String   @default("1920x1080")
+  fps           Float    @default(30)
+  videoBitrate  String   @default("8000k")
+  audioBitrate  String   @default("192k")
+  preset        String   @default("medium")
+  transitions   String?
+  subtitlesPath String?
+  watermarkPath String?
+  errorMessage  String?
+  fileSize      Int?
+  duration      Float?
+  codec         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
